@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ShopSmart Sales Analysis</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --border: rgba(11,11,11,0.10);
+    --s1: #2a78d6;   /* blue    */
+    --s2: #eb6834;   /* orange  */
+    --s3: #1baf7a;   /* aqua    */
+    --s4: #eda100;   /* yellow  */
+    --s5: #e87ba4;   /* magenta */
+    --dim: #c9c8c1;  /* de-emphasis */
+    --seq-100:#cde2fb; --seq-200:#9ec5f4; --seq-300:#6da7ec; --seq-400:#3987e5; --seq-500:#256abf; --seq-600:#184f95; --seq-700:#0d366b;
+    --good-text: #006300;
+    --bad-text: #b32d2d;
+    --cell-hi: #ffffff; --cell-lo: #0b0b0b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
+      --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+      --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --dim: #3a3a37;
+      --seq-100:#184f95; --seq-200:#1c5cab; --seq-300:#256abf; --seq-400:#2a78d6; --seq-500:#3987e5; --seq-600:#5598e7; --seq-700:#86b6ef;
+      --good-text: #0ca30c; --bad-text: #e66767;
+      --cell-hi: #0b0b0b; --cell-lo: #ffffff;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --dim: #3a3a37;
+    --seq-100:#184f95; --seq-200:#1c5cab; --seq-300:#256abf; --seq-400:#2a78d6; --seq-500:#3987e5; --seq-600:#5598e7; --seq-700:#86b6ef;
+    --good-text: #0ca30c; --bad-text: #e66767;
+    --cell-hi: #0b0b0b; --cell-lo: #ffffff;
+  }
+
+  * { box-sizing: border-box; }
+  html { background: var(--page); }
+  body {
+    margin: 0; padding-block: 0 64px; padding-inline: 20px;
+    font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--ink); background: var(--page);
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; }
+  header { padding: 48px 0 20px; border-bottom: 1px solid var(--grid); margin-bottom: 8px; }
+  .eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+  h1 { font-size: 34px; line-height: 1.15; margin: 0 0 10px; font-weight: 650; letter-spacing: -.01em; }
+  .lede { font-size: 17px; color: var(--ink-2); max-width: 720px; margin: 0; }
+  .meta { color: var(--muted); font-size: 13px; margin-top: 16px; display: flex; gap: 18px; flex-wrap: wrap; }
+  .meta a { color: inherit; }
+
+  section { padding: 36px 0 8px; }
+  h2 { font-size: 22px; margin: 0 0 4px; font-weight: 650; letter-spacing: -.01em; }
+  .sub { color: var(--ink-2); margin: 0 0 20px; max-width: 720px; }
+  .qref { color: var(--muted); font-size: 12px; font-weight: 500; margin-left: 8px; vertical-align: middle; }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 24px 0 8px; }
+  .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .tile .label { font-size: 13px; color: var(--ink-2); }
+  .tile .value { font-size: 28px; font-weight: 600; margin-top: 2px; letter-spacing: -.01em; }
+  .tile .note { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 720px) { .grid2 { grid-template-columns: 1fr; } }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px 12px; }
+  .card h3 { font-size: 15px; margin: 0 0 2px; font-weight: 600; }
+  .card .hint { font-size: 13px; color: var(--muted); margin: 0 0 10px; }
+  .chart { width: 100%; }
+  .chart svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--ink-2); margin: 6px 0 2px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+  .legend i.line { height: 2px; width: 16px; border-radius: 1px; }
+
+  .finding { border-left: 3px solid var(--s1); padding: 2px 0 2px 14px; margin: 18px 0 6px; color: var(--ink-2); }
+  .finding strong { color: var(--ink); font-weight: 600; }
+
+  svg text { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; fill: var(--ink-2); font-size: 12px; }
+  svg .tick { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+  svg .grid { stroke: var(--grid); stroke-width: 1; }
+  svg .axis { stroke: var(--axis); stroke-width: 1; }
+  svg .vlabel { fill: var(--ink); font-weight: 600; font-size: 12px; }
+  svg .cat { fill: var(--ink-2); }
+  svg .bar { transition: opacity .12s; }
+  svg .hit { fill: transparent; cursor: default; }
+  svg .hit:hover + .bar, svg .hit:focus + .bar { opacity: .75; }
+  svg .target { stroke: var(--ink-2); stroke-width: 1.5; }
+  svg .cell-label { font-size: 11px; font-weight: 600; }
+
+  .tip { position: fixed; pointer-events: none; background: var(--ink); color: var(--page); padding: 6px 10px; border-radius: 6px; font-size: 12px; line-height: 1.4; z-index: 10; display: none; max-width: 240px; }
+  .tip b { font-size: 13px; }
+
+  details { margin-top: 18px; }
+  summary { cursor: pointer; color: var(--ink-2); font-size: 14px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; margin-top: 10px; }
+  th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--grid); }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+  .tablewrap { overflow-x: auto; }
+
+  footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--grid); color: var(--muted); font-size: 13px; }
+  footer p { margin: 6px 0; }
+  code { font-size: .92em; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; }
+</style>
+</head>
+<body>
+<div class="tip" id="tip" role="status" aria-live="polite"></div>
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">SQL portfolio project · PostgreSQL</p>
+  <h1>ShopSmart sales analysis — summary of results</h1>
+  <p class="lede">Charts of the main results from 20 SQL queries on one year of e-commerce sales. The analysis is in <code>sql/03_analysis.sql</code>; this page only shows the numbers.</p>
+  <p class="lede" style="font-size:14px;color:var(--muted);margin-top:8px">This page was generated with AI assistance (Claude) from the query outputs and checked against them. The SQL queries and their interpretation are my own work.</p>
+  <div class="meta">
+    <span>Data window: 15 Oct 2024 – 15 Oct 2025</span>
+    <span>200 customers · 50 products · 300 orders · 970 order lines · 20 promotions</span>
+  </div>
+</header>
+
+<div class="tiles" aria-label="Headline figures">
+  <div class="tile"><div class="label">Net revenue</div><div class="value">$648.3K</div><div class="note">after line-level discounts</div></div>
+  <div class="tile"><div class="label">Orders</div><div class="value">300</div><div class="note">2,930 units</div></div>
+  <div class="tile"><div class="label">Average order value</div><div class="value">$2,161</div><div class="note">mean of 300 orders</div></div>
+  <div class="tile"><div class="label">Active buyers</div><div class="value">159<span style="font-size:16px;color:var(--muted)"> / 200</span></div><div class="note">41 customers never ordered</div></div>
+  <div class="tile"><div class="label">Discount given</div><div class="value">$53.1K</div><div class="note">7.6 % of gross sales</div></div>
+</div>
+
+<!-- ───────── REGIONS ───────── -->
+<section id="regions">
+  <h2>Regions <span class="qref">Q1 · Q2 · Q8</span></h2>
+  <p class="sub">Customers are spread evenly across the four regions (43–57 each), but sales are not.</p>
+  <div class="grid2" style="grid-template-columns:1fr">
+    <div class="card">
+      <h3>Total sales by region</h3>
+      <p class="hint">Sum of order totals · target line at $175K</p>
+      <div class="chart" id="c-region-sales"></div>
+      <div class="legend"><span><i style="background:var(--s1)"></i>Above target</span><span><i style="background:var(--dim)"></i>Below target</span><span><i class="line" style="background:var(--ink-2)"></i>$175K target</span></div>
+    </div>
+    </div>
+  </div>
+  <p class="finding"><strong>North (~$197k) and South (~$183k) passed the $175k target.</strong> East is far behind at ~$110k. West customers place the biggest orders on average (~$2,567), East the smallest (~$1,662).</p>
+</section>
+
+<!-- ───────── TREND ───────── -->
+<section id="trend">
+  <h2>Monthly revenue <span class="qref">Q4</span></h2>
+  <p class="sub">The data starts and ends on the 15th of October, so both Octobers are half-months and are shown muted.</p>
+  <div class="card">
+    <h3>Revenue per month</h3>
+    <p class="hint">Sum of order totals · muted columns are partial months</p>
+    <div class="chart" id="c-monthly"></div>
+    <div class="legend"><span><i style="background:var(--s1)"></i>Full month</span><span><i style="background:var(--dim)"></i>Partial month (15 days)</span></div>
+  </div>
+  <p class="finding"><strong>Revenue goes up and down a lot</strong>, between about $34k and $70k, with no clear seasonal pattern. September 2025 is the peak.</p>
+</section>
+
+<!-- ───────── CATEGORIES ───────── -->
+<section id="categories">
+  <h2>Categories <span class="qref">Q3 · Q11 · Q19</span></h2>
+  <p class="sub">Revenue and customer reach by product category.</p>
+  <div class="grid2">
+    <div class="card">
+      <h3>Net revenue by category</h3>
+      <p class="hint">All time · share of total in tooltip</p>
+      <div class="chart" id="c-cat-rev"></div>
+    </div>
+    <div class="card">
+      <h3>Customer reach by category</h3>
+      <p class="hint">Unique buyers out of 200 customers · threshold 40</p>
+      <div class="chart" id="c-cat-reach"></div>
+    </div>
+  </div>
+  <p class="finding"><strong>Electronics is the strongest category</strong>: the most revenue, and the only category that passes $20k in all four regions in the last 6 months. Home is the weakest, with only 4 products and 30 % of customers.</p>
+</section>
+
+<!-- ───────── PROMOTIONS ───────── -->
+<section id="promotions">
+  <h2>Promotions <span class="qref">Q15 · Q16</span></h2>
+  <p class="sub">Net revenue of each promoted product while its promotion was active.</p>
+  <div class="card">
+    <h3>Revenue during each promotion window</h3>
+    <p class="hint">Net revenue of the promoted product while the promotion was active · duration and discount in tooltip</p>
+    <div class="chart" id="c-promo"></div>
+    <div class="legend"><span><i style="background:var(--s2)"></i>"How" (Sports) — 3 overlapping promotions</span><span><i style="background:var(--s1)"></i>Other promotions</span></div>
+  </div>
+  <p class="finding"><strong>Promotions on "How" (Sports) generated by far the most revenue</strong>, but three overlapping promotions on the same product make it impossible to credit any single one. Two promotions sold nothing. 8 of the 17 promoted products still sold less than the average product in their category.</p>
+</section>
+
+<!-- ───────── TABLE VIEW ───────── -->
+<section id="tables">
+  <h2>Table view</h2>
+  <p class="sub">Every number on this page, as plain tables.</p>
+  <details><summary>Regions (Q1, Q2, Q8)</summary><div class="tablewrap"><table><thead><tr><th>Region</th><th class="n">Customers</th><th class="n">Orders</th><th class="n">Avg order value</th><th class="n">Total sales</th></tr></thead><tbody id="t-regions"></tbody></table></div></details>
+  <details><summary>Monthly revenue (Q4)</summary><div class="tablewrap"><table><thead><tr><th>Month</th><th class="n">Orders</th><th class="n">Revenue</th><th>Note</th></tr></thead><tbody id="t-monthly"></tbody></table></div></details>
+  <details><summary>Categories (Q3, Q19, overall)</summary><div class="tablewrap"><table><thead><tr><th>Category</th><th class="n">Products</th><th class="n">Avg list price</th><th class="n">Units</th><th class="n">Net revenue</th><th class="n">Unique buyers</th></tr></thead><tbody id="t-cats"></tbody></table></div></details>
+  <details><summary>Promotions (Q15)</summary><div class="tablewrap"><table><thead><tr><th class="n">ID</th><th>Product</th><th>Category</th><th>Start</th><th>End</th><th class="n">Days</th><th class="n">Discount</th><th class="n">Units</th><th class="n">Revenue</th></tr></thead><tbody id="t-promo"></tbody></table></div></details>
+</section>
+
+<footer>
+  <p><strong>Source.</strong> All figures come from the SQL queries in <code>sql/03_analysis.sql</code>, run in PostgreSQL. "Net revenue" is <code>quantity × unit_price × (1 − discount)</code> summed over order lines. This page (HTML/SVG) was generated with AI assistance from those outputs.</p>
+  <p><strong>Caveats.</strong> 300 orders is a small sample, so month-to-month swings and per-region averages should be read as indicative. Promotion revenue is gross revenue inside the window, not incremental lift — there is no control group. The dataset is synthetic training data.</p>
+</footer>
+
+</div>
+
+<script>
+(function () {
+  // ─────────────── data (from sql/03_analysis.sql) ───────────────
+  const regions = [
+    { region: 'North', customers: 56, orders: 87, aov: 2264.02, sales: 196969.89 },
+    { region: 'South', customers: 57, orders: 85, aov: 2147.26, sales: 182517.38 },
+    { region: 'West',  customers: 44, orders: 62, aov: 2566.68, sales: 159133.88 },
+    { region: 'East',  customers: 43, orders: 66, aov: 1661.94, sales: 109688.00 },
+  ];
+  const monthly = [
+    ['2024-10', 31629.45, 14, true], ['2024-11', 61606.06, 29], ['2024-12', 44485.71, 20],
+    ['2025-01', 63783.17, 28], ['2025-02', 57011.91, 27], ['2025-03', 34361.88, 15],
+    ['2025-04', 37851.56, 21], ['2025-05', 64143.17, 25], ['2025-06', 40653.51, 19],
+    ['2025-07', 55853.61, 27], ['2025-08', 59518.43, 30], ['2025-09', 69746.13, 33],
+    ['2025-10', 27664.56, 12, true],
+  ].map(m => ({ month: m[0], revenue: m[1], orders: m[2], partial: !!m[3] }));
+  const cats = [
+    { cat: 'Electronics', products: 14, price: 279.95, units: 816, rev: 219544.93, buyers: 119 },
+    { cat: 'Sports',      products: 11, price: 232.02, units: 687, rev: 144133.61, buyers: 109 },
+    { cat: 'Beauty',      products: 10, price: 251.14, units: 554, rev: 133128.20, buyers: 98 },
+    { cat: 'Clothing',    products: 11, price: 177.36, units: 655, rev: 104401.93, buyers: 113 },
+    { cat: 'Home',        products: 4,  price: 227.14, units: 218, rev: 47100.39,  buyers: 60 },
+  ];
+  const totalRev = 648309.15;
+  const heatRegions = ['East', 'North', 'South', 'West'];
+  const heat = {
+    Electronics: [22409, 27955, 34069, 25499],
+    Sports:      [17370, 23308, 25013, 12089],
+    Beauty:      [12728, 20784, 15532, 15969],
+    Clothing:    [9482, 17243, 14202, 17082],
+    Home:        [4223, 6041, 9661, 3577],
+  };
+  const ordersDist = [[1, 63], [2, 62], [3, 24], [4, 9], [5, 1]];
+  const catDist = [[1, 15], [2, 33], [3, 40], [4, 57], [5, 14]];
+  const promos = [
+    [5, 'How', 'Sports', '2025-04-29', '2025-10-06', 161, 25, 52, 22656.21],
+    [17, 'How', 'Sports', '2025-05-22', '2025-10-01', 133, 15, 42, 18004.01],
+    [20, 'Window', 'Beauty', '2025-04-22', '2025-10-01', 163, 10, 24, 9730.19],
+    [18, 'How', 'Sports', '2025-08-19', '2025-10-14', 57, 10, 19, 8467.00],
+    [19, 'Center', 'Electronics', '2025-05-23', '2025-10-01', 132, 10, 25, 7671.74],
+    [7, 'Dream', 'Clothing', '2025-05-20', '2025-09-18', 122, 15, 45, 5709.23],
+    [11, 'Religious', 'Beauty', '2025-05-05', '2025-10-05', 154, 15, 16, 5531.94],
+    [15, 'Religious', 'Beauty', '2025-07-11', '2025-09-15', 67, 20, 12, 4167.65],
+    [6, 'For', 'Electronics', '2025-06-11', '2025-09-28', 110, 10, 24, 2967.02],
+    [1, 'Hear', 'Beauty', '2025-08-01', '2025-10-15', 76, 15, 20, 2856.05],
+    [8, 'Society', 'Electronics', '2025-07-31', '2025-10-04', 66, 15, 9, 2809.65],
+    [10, 'Prevent', 'Clothing', '2025-07-25', '2025-09-25', 63, 25, 7, 2674.56],
+    [9, 'Congress', 'Clothing', '2025-08-29', '2025-10-07', 40, 15, 16, 2561.29],
+    [3, 'Reality', 'Clothing', '2025-05-11', '2025-10-05', 148, 15, 32, 1031.00],
+    [13, 'Left', 'Beauty', '2025-08-05', '2025-09-28', 55, 5, 1, 262.37],
+    [12, 'Ball', 'Electronics', '2025-08-01', '2025-10-13', 74, 25, 3, 232.66],
+    [16, 'Century', 'Sports', '2025-09-03', '2025-10-10', 38, 5, 1, 147.56],
+    [4, 'Identify', 'Sports', '2025-08-29', '2025-10-13', 46, 25, 6, 82.99],
+    [14, 'Sometimes', 'Sports', '2025-09-11', '2025-09-17', 7, 10, 0, 0],
+    [2, 'Such', 'Sports', '2025-09-06', '2025-09-25', 20, 25, 0, 0],
+  ].map(p => ({ id: p[0], product: p[1], cat: p[2], start: p[3], end: p[4], days: p[5], pct: p[6], units: p[7], rev: p[8] }));
+  const under = [
+    ['Identify', 'Sports', 989.35, 13103.06], ['Ball', 'Electronics', 2770.37, 15681.78],
+    ['Reality', 'Clothing', 2287.04, 9491.08], ['Sometimes', 'Sports', 5511.57, 13103.06],
+    ['For', 'Electronics', 8754.69, 15681.78], ['Century', 'Sports', 9140.21, 13103.06],
+    ['Hear', 'Beauty', 9762.79, 13312.82], ['Congress', 'Clothing', 8380.76, 9491.08],
+  ].map(u => ({ product: u[0], cat: u[1], sales: u[2], avg: u[3], pct: (u[2] / u[3] - 1) * 100 }));
+
+  // ─────────────── helpers ───────────────
+  const NS = 'http://www.w3.org/2000/svg';
+  const el = (n, a = {}, txt) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; return e; };
+  const fmtK = v => v >= 1000 ? '$' + (v / 1000).toFixed(v >= 100000 || v % 1000 === 0 ? 0 : 1) + 'K' : '$' + Math.round(v);
+  const fmtMoney = v => '$' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmtInt = v => v.toLocaleString('en-US');
+  const niceMax = (max, steps = 4) => { const raw = max / steps; const mag = Math.pow(10, Math.floor(Math.log10(raw))); const n = [1, 2, 2.5, 5, 10].find(x => x * mag >= raw) * mag; return { step: n, max: n * steps }; };
+  const monthLabel = m => { const [y, mo] = m.split('-'); return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+mo - 1] + (mo === '01' || m === '2024-10' ? " '" + y.slice(2) : ''); };
+
+  const tip = document.getElementById('tip');
+  function attachTip(target, html) {
+    const show = ev => { tip.innerHTML = ''; html().forEach(n => tip.appendChild(n)); tip.style.display = 'block'; move(ev); };
+    const move = ev => { const x = (ev.clientX ?? 0) + 14, y = (ev.clientY ?? 0) + 14; const r = tip.getBoundingClientRect(); tip.style.left = Math.min(x, window.innerWidth - r.width - 12) + 'px'; tip.style.top = Math.min(y, window.innerHeight - r.height - 12) + 'px'; };
+    const hide = () => { tip.style.display = 'none'; };
+    target.addEventListener('pointerenter', show); target.addEventListener('pointermove', move); target.addEventListener('pointerleave', hide);
+    target.addEventListener('focus', ev => { const b = target.getBoundingClientRect(); show({ clientX: b.left + b.width / 2, clientY: b.top }); }); target.addEventListener('blur', hide);
+    target.setAttribute('tabindex', '0');
+  }
+  const tipRows = (title, rows) => { const out = []; const b = document.createElement('b'); b.textContent = title; out.push(b); rows.forEach(([k, v]) => { const d = document.createElement('div'); d.textContent = k + ': ' + v; out.push(d); }); return out; };
+
+  // rounded-top column path (square at baseline)
+  const colPath = (x, y, w, h, r = 4) => { r = Math.min(r, w / 2, h); return `M${x},${y + h} V${y + r} Q${x},${y} ${x + r},${y} H${x + w - r} Q${x + w},${y} ${x + w},${y + r} V${y + h} Z`; };
+  const barPath = (x, y, w, h, r = 4) => { r = Math.min(r, h / 2, w); return `M${x},${y} H${x + w - r} Q${x + w},${y} ${x + w},${y + r} V${y + h - r} Q${x + w},${y + h} ${x + w - r},${y + h} H${x} Z`; };
+
+  // ─────────────── column chart ───────────────
+  function columnChart(id, data, opt) {
+    const W = opt.width || 480, H = opt.height || 240, m = { t: 22, r: 8, b: 30, l: 44 };
+    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': opt.aria || '' });
+    const pw = W - m.l - m.r, ph = H - m.t - m.b;
+    const { step, max } = niceMax(Math.max(...data.map(d => d.value), opt.target || 0));
+    const y = v => m.t + ph - (v / max) * ph;
+    for (let v = 0; v <= max; v += step) {
+      svg.appendChild(el('line', { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), class: v === 0 ? 'axis' : 'grid' }));
+      svg.appendChild(el('text', { x: m.l - 6, y: y(v) + 4, 'text-anchor': 'end', class: 'tick' }, opt.fmtTick ? opt.fmtTick(v) : fmtK(v)));
+    }
+    const band = pw / data.length, bw = Math.min(24, band * 0.6);
+    data.forEach((d, i) => {
+      const x = m.l + band * i + (band - bw) / 2, top = y(d.value), h = Math.max(0, m.t + ph - top);
+      const hit = el('rect', { x: m.l + band * i, y: m.t, width: band, height: ph, class: 'hit' });
+      const bar = el('path', { d: colPath(x, top, bw, h), fill: d.color || 'var(--s1)', class: 'bar' });
+      svg.appendChild(hit); svg.appendChild(bar);
+      attachTip(hit, () => tipRows(d.tipTitle || d.label, d.tip));
+      svg.appendChild(el('text', { x: x + bw / 2, y: H - m.b + 16, 'text-anchor': 'middle', class: 'cat' }, d.label));
+      if (d.showValue) svg.appendChild(el('text', { x: x + bw / 2, y: top - 6, 'text-anchor': 'middle', class: 'vlabel' }, opt.fmtVal ? opt.fmtVal(d.value) : fmtK(d.value)));
+    });
+    if (opt.target) {
+      svg.appendChild(el('line', { x1: m.l, x2: W - m.r, y1: y(opt.target), y2: y(opt.target), class: 'target' }));
+      svg.appendChild(el('text', { x: W - m.r, y: y(opt.target) - 5, 'text-anchor': 'end', class: 'tick' }, opt.targetLabel));
+    }
+    document.getElementById(id).appendChild(svg);
+  }
+
+  // ─────────────── horizontal bar chart ───────────────
+  function barChart(id, data, opt) {
+    const W = opt.width || 480, rowH = opt.rowH || 26, m = { t: 6, r: 56, b: 22, l: opt.left || 90 };
+    const H = m.t + rowH * data.length + m.b;
+    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': opt.aria || '' });
+    const pw = W - m.l - m.r;
+    const maxV = Math.max(...data.map(d => Math.abs(d.value)), opt.max || 0);
+    const { step, max } = niceMax(maxV, opt.steps || 4);
+    const x = v => m.l + (v / max) * pw;
+    for (let v = 0; v <= max; v += step) {
+      svg.appendChild(el('line', { y1: m.t, y2: m.t + rowH * data.length, x1: x(v), x2: x(v), class: v === 0 ? 'axis' : 'grid' }));
+      svg.appendChild(el('text', { x: x(v), y: H - 6, 'text-anchor': 'middle', class: 'tick' }, opt.fmtTick ? opt.fmtTick(v) : fmtK(v)));
+    }
+    const bh = Math.min(18, rowH - 8);
+    data.forEach((d, i) => {
+      const yy = m.t + rowH * i + (rowH - bh) / 2, w = Math.max(0, x(d.value) - m.l);
+      const hit = el('rect', { x: 0, y: m.t + rowH * i, width: W, height: rowH, class: 'hit' });
+      const bar = el('path', { d: barPath(m.l, yy, w, bh), fill: d.color || 'var(--s1)', class: 'bar' });
+      svg.appendChild(hit); svg.appendChild(bar);
+      attachTip(hit, () => tipRows(d.tipTitle || d.label, d.tip));
+      svg.appendChild(el('text', { x: m.l - 8, y: yy + bh / 2 + 4, 'text-anchor': 'end', class: 'cat' }, d.label));
+      if (d.showValue) svg.appendChild(el('text', { x: x(d.value) + 6, y: yy + bh / 2 + 4, class: 'vlabel' }, opt.fmtVal ? opt.fmtVal(d.value) : fmtK(d.value)));
+    });
+    if (opt.target) {
+      svg.appendChild(el('line', { y1: m.t - 2, y2: m.t + rowH * data.length + 2, x1: x(opt.target), x2: x(opt.target), class: 'target' }));
+      svg.appendChild(el('text', { x: x(opt.target) + 4, y: m.t + 10, class: 'tick' }, opt.targetLabel));
+    }
+    document.getElementById(id).appendChild(svg);
+  }
+
+  // ─────────────── heatmap ───────────────
+  function heatmap(id) {
+    const rows = Object.keys(heat), cols = heatRegions;
+    const W = 960, cellW = 190, cellH = 40, m = { t: 26, l: 110 };
+    const H = m.t + cellH * rows.length + 6;
+    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Heatmap of net revenue by category and region for the last six months' });
+    const all = rows.flatMap(r => heat[r]); const maxV = Math.max(...all), minV = Math.min(...all);
+    const ramp = ['--seq-100', '--seq-200', '--seq-300', '--seq-400', '--seq-500', '--seq-600', '--seq-700'];
+    cols.forEach((c, j) => svg.appendChild(el('text', { x: m.l + cellW * j + cellW / 2, y: 16, 'text-anchor': 'middle', class: 'cat' }, c)));
+    rows.forEach((r, i) => {
+      svg.appendChild(el('text', { x: m.l - 10, y: m.t + cellH * i + cellH / 2 + 4, 'text-anchor': 'end', class: 'cat' }, r));
+      heat[r].forEach((v, j) => {
+        const t = (v - minV) / (maxV - minV); const idx = Math.min(ramp.length - 1, Math.floor(t * ramp.length));
+        const x = m.l + cellW * j + 1, y = m.t + cellH * i + 1;
+        const g = el('g');
+        const rect = el('rect', { x, y, width: cellW - 2, height: cellH - 2, rx: 4, fill: `var(${ramp[idx]})`, class: 'bar' });
+        g.appendChild(rect);
+        if (v > 20000) g.appendChild(el('rect', { x: x + 1.5, y: y + 1.5, width: cellW - 5, height: cellH - 5, rx: 3, fill: 'none', stroke: 'var(--ink)', 'stroke-width': 1.5 }));
+        const dark = idx >= 3; // light mode: steps 400+ are dark enough for white text
+        const label = el('text', { x: x + (cellW - 2) / 2, y: y + cellH / 2 + 3, 'text-anchor': 'middle', class: 'cell-label' }, fmtK(v));
+        label.style.fill = dark ? 'var(--cell-hi)' : 'var(--cell-lo)';
+        g.appendChild(label);
+        const hit = el('rect', { x, y, width: cellW - 2, height: cellH - 2, class: 'hit' });
+        g.appendChild(hit);
+        attachTip(hit, () => tipRows(r + ' · ' + cols[j], [['Net revenue', fmtMoney(v)], ['Above $20K', v > 20000 ? 'yes' : 'no']]));
+        svg.appendChild(g);
+      });
+    });
+    document.getElementById(id).appendChild(svg);
+  }
+
+  // ─────────────── build charts ───────────────
+  columnChart('c-region-sales', regions.map(r => ({ label: r.region, value: r.sales, color: r.sales > 175000 ? 'var(--s1)' : 'var(--dim)', showValue: true,
+    tip: [['Total sales', fmtMoney(r.sales)], ['Orders', r.orders], ['Customers', r.customers]] })),
+    { width: 960, height: 280, target: 175000, targetLabel: '$175K target', aria: 'Total sales by region with a 175 thousand dollar target line' });
+
+  columnChart('c-monthly', monthly.map(mo => ({ label: monthLabel(mo.month), value: mo.revenue, color: mo.partial ? 'var(--dim)' : 'var(--s1)', showValue: mo.month === '2025-09',
+    tipTitle: mo.month + (mo.partial ? ' (partial month)' : ''), tip: [['Revenue', fmtMoney(mo.revenue)], ['Orders', mo.orders]] })),
+    { width: 960, height: 300, aria: 'Revenue per month from October 2024 to October 2025' });
+
+  barChart('c-cat-rev', cats.map(c => ({ label: c.cat, value: c.rev, showValue: true,
+    tip: [['Net revenue', fmtMoney(c.rev)], ['Share of total', (c.rev / totalRev * 100).toFixed(1) + ' %'], ['Units', fmtInt(c.units)], ['Products', c.products]] })),
+    { aria: 'Net revenue by category, all time' });
+
+  barChart('c-cat-reach', cats.map(c => ({ label: c.cat, value: c.buyers, showValue: true, color: c.buyers >= 40 ? 'var(--s1)' : 'var(--dim)',
+    tip: [['Unique buyers', c.buyers], ['Share of customers', (c.buyers / 2).toFixed(1) + ' %']] })),
+    { max: 200, steps: 4, fmtTick: v => fmtInt(v), fmtVal: v => fmtInt(v), target: 40, targetLabel: '≥ 40', aria: 'Unique buyers per category out of 200 customers' });
+
+  barChart('c-promo', promos.map(p => ({ label: '#' + p.id + ' ' + p.product, value: p.rev, color: p.product === 'How' ? 'var(--s2)' : 'var(--s1)', showValue: p.rev >= 8000 || p.rev === 0,
+    tipTitle: '#' + p.id + ' · ' + p.product + ' (' + p.cat + ')', tip: [['Revenue in window', fmtMoney(p.rev)], ['Units', p.units], ['Window', p.start + ' → ' + p.end + ' (' + p.days + ' days)'], ['Promo discount', p.pct + ' %']] })),
+    { width: 960, rowH: 22, left: 120, aria: 'Net revenue during each of the twenty promotion windows' });
+
+  // ─────────────── tables ───────────────
+  const td = (v, n) => { const c = document.createElement('td'); c.textContent = v; if (n) c.className = 'n'; return c; };
+  const row = cells => { const tr = document.createElement('tr'); cells.forEach(c => tr.appendChild(c)); return tr; };
+  const tb = id => document.getElementById(id);
+  regions.forEach(r => tb('t-regions').appendChild(row([td(r.region), td(r.customers, 1), td(r.orders, 1), td(fmtMoney(r.aov), 1), td(fmtMoney(r.sales), 1)])));
+  monthly.forEach(mo => tb('t-monthly').appendChild(row([td(mo.month), td(mo.orders, 1), td(fmtMoney(mo.revenue), 1), td(mo.partial ? 'partial month (15 days)' : '')])));
+  cats.forEach(c => tb('t-cats').appendChild(row([td(c.cat), td(c.products, 1), td(fmtMoney(c.price), 1), td(fmtInt(c.units), 1), td(fmtMoney(c.rev), 1), td(c.buyers, 1)])));
+  promos.forEach(p => tb('t-promo').appendChild(row([td(p.id, 1), td(p.product), td(p.cat), td(p.start), td(p.end), td(p.days, 1), td(p.pct + ' %', 1), td(p.units, 1), td(fmtMoney(p.rev), 1)])));
+})();
+</script>
+</body>
+</html>
