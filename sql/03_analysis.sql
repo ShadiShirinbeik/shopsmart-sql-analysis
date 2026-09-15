@@ -8,7 +8,7 @@ from customers
 group by region
 order by number_of_customers desc;
 
---==========================================================================================
+-- =====================================================================
 
 -- Q2 · Regional performance
 -- Business question: What is the average order value in each region?
@@ -24,7 +24,7 @@ join orders o
 group by region
 order by avg_order_value desc;
 
---==========================================================================================
+-- =====================================================================
 
 -- Q3 · Product mix
 -- Business question: Which product categories carry the highest average list price?
@@ -39,7 +39,7 @@ from products p
 group by category 
 order by list_price_average desc;
 
---==========================================================================================
+-- =====================================================================
 
 -- Q4 · Revenue trend
 -- Business question: How has monthly revenue developed over time?
@@ -52,7 +52,7 @@ from orders o
 group by monthly_order_date 
 order by monthly_revenue desc;
 
---==========================================================================================
+-- =====================================================================
 
 -- Q5 · Product performance
 -- Business question: Which 10 products sell the most units?
@@ -70,7 +70,7 @@ group by product_id, product_name
 order by unit_sold desc
 limit 10;
 
---==========================================================================================
+-- =====================================================================
 
 -- Q6 · Customer loyalty
 -- Business question: Which customers placed more than 3 orders in the last 6 months of data?
@@ -89,7 +89,7 @@ group by customer_id, last_name
 having count(*) > 3
 order by total_orders desc;
 
---==========================================================================================
+-- =====================================================================
 
 -- Q7 · Pricing
 -- Business question: Which categories are discounted more than 10% on average per order line?
@@ -104,7 +104,7 @@ join order_items oi
 group by category
 having avg(oi.discount) > 0.10;
 
---==========================================================================================
+-- =====================================================================
 
 -- Q8 · Regional targets
 -- Business question: Which regions exceeded $175,000 in total sales?
@@ -120,7 +120,7 @@ group by region
 having sum(total_amount) > 175000 
 order by total_order_amount desc;
 
---==========================================================================================
+-- =====================================================================
 
 -- Q9 · High-value customers
 -- Business question: Which customers have an average order value above the company-wide average?
@@ -153,7 +153,7 @@ where ca.avg_order_value  > ov.overal_avg
 order by ca.avg_order_value desc
 limit 10;
 
---==========================================================================================
+-- =====================================================================
 
 -- Q10 · Catalog health
 -- Business question: Which products have never been sold?
@@ -169,19 +169,132 @@ group by product_id
 having sum(quantity) is null
 order by product_quantity;
 
+-- =====================================================================
 
---==========================================================================================
+-- Q11 · Regional sales by category
+-- Business question: In the last 6 months, which category-region combinations generated more than $20,000 in net revenue?
+-- Insight: Electronics is the only category that passes $20k in all four regions, with Electronics-South the strongest pair (~$34k). 
+--			Sports clears the bar only in South and North, 
+--			and Beauty only in North. 
+--			Clothing and Home do not reach $20k anywhere in the last 6 months.
 
+select category, 
+		region,
+		round(sum(oi.quantity * oi.unit_price * (1 - oi.discount)), 2) as net_revenue
+from orders o 
+join customers c 
+	using (customer_id)
+join order_items oi 
+	using(order_id)
+join products p 
+	using(product_id)
+where order_date > (select max(order_date) - interval '6 month' from orders)
+group by category, region
+having sum(oi.quantity * oi.unit_price * (1 - oi.discount)) > 20000
+order by net_revenue desc;
 
+-- =====================================================================
 
+-- Q12 · Cross-category buyers
+-- Business question: Which customers have bought from more than 3 different categories?
+-- Insight: 71 of 159 buyers (45%) have purchased from 4 or 5 of the 5 categories, 
+--			and only 15 customers stick to a single category.
 
+select customer_id, 
+		last_name,
+		count(distinct category) as count_categories
+from orders o 
+join order_items oi 
+	using(order_id)
+join products p 
+	using(product_id)
+join customers c 
+	using(customer_id)
+group by customer_id, last_name
+having count(category) > 3
+order by count_categories desc;
 
+-- =====================================================================
 
+-- Q13 · Discount depth by category
+-- Business question: What is the average discount per category, considering only categories with at least 50 units sold?
+-- Insight: Every category sells well above the 50-unit, so none are filtered out.
+--			Average discounts stay in a tight 7.5%–8.0% band.
 
+with category_sales as (
+    select category,
+           sum(oi.quantity) as units_sold,
+           avg(oi.discount) as avg_discount
+    from order_items oi
+    join products p
+	using(product_id)
+    group by category
+)
+select category,
+       units_sold,
+       round(avg_discount * 100, 2) as avg_discount_pct
+from category_sales
+where units_sold >= 50
+order by avg_discount_pct desc;
 
+-- =====================================================================
 
+-- Q14 · Campaign response
+-- Business question: Who are the top 5 customers by spend during active promotion periods?
+-- Insight: Cameron Bradley (~$2,840) and Nicholas Johnson (~$2,600) spent the most on promoted products while a promotion was active.
 
+with promo_lines as (
+select customer_id,
+		oi.quantity * oi.unit_price * (1 - oi.discount) AS net_value
+from orders o 
+join order_items oi 
+	using(order_id)
+where exists
+		(select 1 from promotions pr
+		where pr.product_id = oi.product_id
+		and o.order_date between pr.start_date and pr.end_date ) 
+)
+select customer_id,
+		first_name,
+		round(sum(pl.net_value), 2) as promo_spend
+from promo_lines pl
+join customers s
+	using (customer_id)
+group by customer_id, first_name
+order by promo_spend desc
+limit 5;
+-- =====================================================================
 
+-- Q15 · Promotion revenue
+-- Business question: How much revenue did each promoted product generate during its promotion window?
+-- Insight: Promotions on "How" (Sports) generated by far the most revenue (~$22.7k and ~$18k), 
+--			but three overlapping promos on the same product make it impossible to credit any single one. 
 
+with sales as (
+    select product_id,
+           order_date,
+           quantity,
+           quantity * unit_price * (1 - oi.discount) as net_value
+    from order_items oi
+    join orders o 
+		using(order_id)
+)
+select promotion_id,
+       product_name,
+       category,
+       start_date,
+       end_date,
+       end_date - start_date + 1 as promo_days,
+       discount_percent,
+       ROUND(COALESCE(SUM(s.net_value), 0), 2) as promo_revenue
+from promotions pr
+join products p 
+	using(product_id)
+left join sales s 
+	using(product_id)
+where order_date between start_date and end_date
+group by promotion_id, product_name, category,
+         start_date, end_date, discount_percent
+order by promo_revenue desc;
 
 
