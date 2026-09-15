@@ -6,7 +6,7 @@
 \copy promotions  FROM 'data/promotions.csv'  CSV HEADER
 \copy order_items FROM 'data/order_items.csv' CSV HEADER
 
--- to check: expected 200 / 50 / 300 / 20 / 970
+-- row-count check: expected 200 / 50 / 300 / 20 / 970
 SELECT 'customers', COUNT(*) FROM customers
 UNION ALL SELECT 'products',    COUNT(*) FROM products
 UNION ALL SELECT 'orders',      COUNT(*) FROM orders
