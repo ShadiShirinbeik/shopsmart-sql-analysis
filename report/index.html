@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ShopSmart Sales Analysis</title>
 <style>
+  
   :root {
     color-scheme: light;
     --page: #f9f9f7;
@@ -54,7 +55,7 @@
     font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
     color: var(--ink); background: var(--page);
   }
-  .wrap { max-width: 1040px; margin: 0 auto; }
+  .wrap { max-width: 960px; margin: 0 auto; }
   header { padding: 48px 0 20px; border-bottom: 1px solid var(--grid); margin-bottom: 8px; }
   .eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
   h1 { font-size: 34px; line-height: 1.15; margin: 0 0 10px; font-weight: 650; letter-spacing: -.01em; }
@@ -79,7 +80,7 @@
   .card h3 { font-size: 15px; margin: 0 0 2px; font-weight: 600; }
   .card .hint { font-size: 13px; color: var(--muted); margin: 0 0 10px; }
   .chart { width: 100%; }
-  .chart svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .chart svg { max-width: 100%; height: auto; display: block; overflow: visible; margin: 0 auto; }
   .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--ink-2); margin: 6px 0 2px; }
   .legend span { display: inline-flex; align-items: center; gap: 6px; }
   .legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
@@ -148,7 +149,6 @@
       <p class="hint">Sum of order totals · target line at $175K</p>
       <div class="chart" id="c-region-sales"></div>
       <div class="legend"><span><i style="background:var(--s1)"></i>Above target</span><span><i style="background:var(--dim)"></i>Below target</span><span><i class="line" style="background:var(--ink-2)"></i>$175K target</span></div>
-    </div>
     </div>
   </div>
   <p class="finding"><strong>North (~$197k) and South (~$183k) passed the $175k target.</strong> East is far behind at ~$110k. West customers place the biggest orders on average (~$2,567), East the smallest (~$1,662).</p>
@@ -305,8 +305,8 @@
 
   // ─────────────── column chart ───────────────
   function columnChart(id, data, opt) {
-    const W = opt.width || 480, H = opt.height || 240, m = { t: 22, r: 8, b: 30, l: 44 };
-    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': opt.aria || '' });
+    const W = opt.width || 430, H = opt.height || 240, m = { t: 22, r: 8, b: 30, l: 44 };
+    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: 'img', 'aria-label': opt.aria || '' });
     const pw = W - m.l - m.r, ph = H - m.t - m.b;
     const { step, max } = niceMax(Math.max(...data.map(d => d.value), opt.target || 0));
     const y = v => m.t + ph - (v / max) * ph;
@@ -333,9 +333,9 @@
 
   // ─────────────── horizontal bar chart ───────────────
   function barChart(id, data, opt) {
-    const W = opt.width || 480, rowH = opt.rowH || 26, m = { t: 6, r: 56, b: 22, l: opt.left || 90 };
+    const W = opt.width || 430, rowH = opt.rowH || 26, m = { t: 6, r: 56, b: 22, l: opt.left || 90 };
     const H = m.t + rowH * data.length + m.b;
-    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': opt.aria || '' });
+    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: 'img', 'aria-label': opt.aria || '' });
     const pw = W - m.l - m.r;
     const maxV = Math.max(...data.map(d => Math.abs(d.value)), opt.max || 0);
     const { step, max } = niceMax(maxV, opt.steps || 4);
@@ -395,11 +395,11 @@
   // ─────────────── build charts ───────────────
   columnChart('c-region-sales', regions.map(r => ({ label: r.region, value: r.sales, color: r.sales > 175000 ? 'var(--s1)' : 'var(--dim)', showValue: true,
     tip: [['Total sales', fmtMoney(r.sales)], ['Orders', r.orders], ['Customers', r.customers]] })),
-    { width: 960, height: 280, target: 175000, targetLabel: '$175K target', aria: 'Total sales by region with a 175 thousand dollar target line' });
+    { width: 900, height: 280, target: 175000, targetLabel: '$175K target', aria: 'Total sales by region with a 175 thousand dollar target line' });
 
   columnChart('c-monthly', monthly.map(mo => ({ label: monthLabel(mo.month), value: mo.revenue, color: mo.partial ? 'var(--dim)' : 'var(--s1)', showValue: mo.month === '2025-09',
     tipTitle: mo.month + (mo.partial ? ' (partial month)' : ''), tip: [['Revenue', fmtMoney(mo.revenue)], ['Orders', mo.orders]] })),
-    { width: 960, height: 300, aria: 'Revenue per month from October 2024 to October 2025' });
+    { width: 900, height: 300, aria: 'Revenue per month from October 2024 to October 2025' });
 
   barChart('c-cat-rev', cats.map(c => ({ label: c.cat, value: c.rev, showValue: true,
     tip: [['Net revenue', fmtMoney(c.rev)], ['Share of total', (c.rev / totalRev * 100).toFixed(1) + ' %'], ['Units', fmtInt(c.units)], ['Products', c.products]] })),
@@ -411,7 +411,7 @@
 
   barChart('c-promo', promos.map(p => ({ label: '#' + p.id + ' ' + p.product, value: p.rev, color: p.product === 'How' ? 'var(--s2)' : 'var(--s1)', showValue: p.rev >= 8000 || p.rev === 0,
     tipTitle: '#' + p.id + ' · ' + p.product + ' (' + p.cat + ')', tip: [['Revenue in window', fmtMoney(p.rev)], ['Units', p.units], ['Window', p.start + ' → ' + p.end + ' (' + p.days + ' days)'], ['Promo discount', p.pct + ' %']] })),
-    { width: 960, rowH: 22, left: 120, aria: 'Net revenue during each of the twenty promotion windows' });
+    { width: 900, rowH: 22, left: 120, aria: 'Net revenue during each of the twenty promotion windows' });
 
   // ─────────────── tables ───────────────
   const td = (v, n) => { const c = document.createElement('td'); c.textContent = v; if (n) c.className = 'n'; return c; };
