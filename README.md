@@ -4,7 +4,7 @@ An end-to-end SQL analysis of a small e-commerce dataset in **PostgreSQL**: 200 
 
 The business team asked three things: *how do our customers behave, which categories perform, and do promotions actually work?* This repo answers those questions with 20 SQL queries and documents what each one found.
 
-**[→ Read the queries](sql/03_analysis.sql)** · [→ Summary page](report/index.html) (charts of the query results, generated with AI assistance — see note below)
+**[→ Read the queries](sql/03_analysis.sql)** · [→ Summary page](https://shadishirinbeik.github.io/shopsmart-sql-analysis/) (charts of the query results, generated with AI assistance — see note below)
 
 ---
 
@@ -112,8 +112,7 @@ Every query in [`sql/03_analysis.sql`](sql/03_analysis.sql) is preceded by the b
 │   ├── 01_schema.sql      DDL with primary and foreign keys
 │   ├── 02_load.sql        \copy statements + row-count check
 │   └── 03_analysis.sql    the 20 questions, each with business framing and insight
-├── docs/
-│   └── erd.png            entity-relationship diagram
+├── index.html             redirection to the report
 └── report/
     └── index.html         summary page with charts of the query results (see note below)
 ```
