@@ -112,8 +112,7 @@ Every query in [`sql/03_analysis.sql`](sql/03_analysis.sql) is preceded by the b
 │   ├── 01_schema.sql      DDL with primary and foreign keys
 │   ├── 02_load.sql        \copy statements + row-count check
 │   └── 03_analysis.sql    the 20 questions, each with business framing and insight
-├── docs/
-│   └── erd.png            entity-relationship diagram
+├── index.html             redirection to the report
 └── report/
     └── index.html         summary page with charts of the query results (see note below)
 ```
